@@ -78,7 +78,7 @@ void stubRoutines_init2(); // note: StubRoutines need 2-phase init
 // during VM shutdown
 void perfMemory_exit();
 void ostream_exit();
-
+//初始化全局数据结构
 void vm_init_globals() {
   check_ThreadShadow();
   basic_types_init();
@@ -88,7 +88,7 @@ void vm_init_globals() {
   perfMemory_init();
 }
 
-
+//初始化全局模块
 jint init_globals() {
   HandleMark hm;
   management_init();

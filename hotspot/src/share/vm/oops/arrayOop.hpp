@@ -81,7 +81,7 @@ class arrayOopDesc : public oopDesc {
 
   // Tells whether index is within bounds.
   bool is_within_bounds(int index) const        { return 0 <= index && index < length(); }
-
+   //描述数组长度的字段
   // Accessors for instance variable which is not a C++ declared nonstatic
   // field.
   int length() const {

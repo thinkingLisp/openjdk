@@ -213,8 +213,11 @@ class Klass : public Klass_vtbl {
   //
   // Where to look to observe a supertype (it is &_secondary_super_cache for
   // secondary supers, else is &_primary_supers[depth()].
+  //表示该对象整体布局的综合描述符
   juint       _super_check_offset;
-
+   //表示类名,
+   //如果是String,java/lang/String
+   //如果是数组,[Ljava/lang/String
   // Class name.  Instance classes: java/lang/String, etc.  Array classes: [I,
   // [Ljava/lang/String;, etc.  Set to zero for all other kinds of classes.
   Symbol*     _name;
@@ -239,12 +242,16 @@ class Klass : public Klass_vtbl {
   // Ordered list of all primary supertypes
   klassOop    _primary_supers[_primary_super_limit];
   // java/lang/Class instance mirroring this class
+  //表示镜像类,用来存储对象实例的静态数据
   oop       _java_mirror;
   // Superclass
+  //表示父类
   klassOop  _super;
   // First subclass (NULL if none); _subklass->next_sibling() is next one
+  //指向第一个子类,如果没有,则为NULL
   klassOop _subklass;
   // Sibling link (or NULL); links all subklasses of a klass
+  //指向下有个兄弟节点
   klassOop _next_sibling;
 
   //

@@ -467,7 +467,10 @@ JVM_LEAF(jint, jmm_GetOptionalSupport(JNIEnv *env, jmmOptionalSupport* support))
   Management::get_optional_support(support);
   return 0;
 JVM_END
-
+/**
+  JVM_ENTRY 宏定义接口函数
+  @author 杨
+*/
 // Returns a java.lang.String object containing the input arguments to the VM.
 JVM_ENTRY(jobject, jmm_GetInputArguments(JNIEnv *env))
   ResourceMark rm(THREAD);

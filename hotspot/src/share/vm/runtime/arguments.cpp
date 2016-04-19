@@ -141,10 +141,10 @@ void Arguments::process_sun_java_launcher_properties(JavaVMInitArgs* args) {
     }
   }
 }
-
+ //配置虚拟机运行时系统的属性key value
 // Initialize system properties key and value.
 void Arguments::init_system_properties() {
-
+  
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.specification.name",
                                                                  "Java Virtual Machine Specification",  false));
   PropertyList_add(&_system_properties, new SystemProperty("java.vm.version", VM_Version::vm_release(),  false));

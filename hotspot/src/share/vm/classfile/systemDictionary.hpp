@@ -538,35 +538,35 @@ public:
 
 
   // Static variables
-
+  
   // hashtable sizes for system dictionary to allow growth
   // prime numbers for system dictionary size
   static int                     _sdgeneration;
   static const int               _primelist[_prime_array_size];
-
+   //持有已加载类的HashTable
   // Hashtable holding loaded classes.
   static Dictionary*            _dictionary;
-
+   //持有将被加载类的HashTable
   // Hashtable holding placeholders for classes being loaded.
   static PlaceholderTable*       _placeholders;
-
+   //持有共享库的类的Hashtable
   // Hashtable holding classes from the shared archive.
   static Dictionary*             _shared_dictionary;
-
+   //单调递增计数器,随着_number_of_classes和端点等信息增加或者删除
   // Monotonically increasing counter which grows with
   // _number_of_classes as well as hot-swapping and breakpoint setting
   // and removal.
   static int                     _number_of_modifications;
-
+   //系统类加载器锁对象
   // Lock object for system class loader
   static oop                     _system_loader_lock_obj;
-
+  //类加载器约束
   // Constraints on class loaders
   static LoaderConstraintTable*  _loader_constraints;
-
+   //解析错误
   // Resolution errors
   static ResolutionErrorTable*   _resolution_errors;
-
+   //调用方法表(JSR 292)
   // Invoke methods (JSR 292)
   static SymbolPropertyTable*    _invoke_method_table;
 
@@ -664,13 +664,13 @@ private:
   static void update_dictionary(int d_index, unsigned int d_hash,
                                 int p_index, unsigned int p_hash,
                                 instanceKlassHandle k, Handle loader, TRAPS);
-
+  //持有公用的klasses
   // Variables holding commonly used klasses (preloaded)
   static klassOop _well_known_klasses[];
-
+   //延迟加载类
   // Lazily loaded klasses
   static volatile klassOop _abstract_ownable_synchronizer_klass;
-
+   //持有基本类型的装箱类
   // table of box klasses (int_klass, etc.)
   static klassOop _box_klasses[T_VOID+1];
 

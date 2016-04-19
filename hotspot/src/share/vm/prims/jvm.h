@@ -95,6 +95,8 @@ JVM_GetInterfaceVersion(void);
  ************************************************************************/
 /*
  * java.lang.Object
+        需要实现wait和notify函数
+   @author 杨
  */
 JNIEXPORT jint JNICALL
 JVM_IHashCode(JNIEnv *env, jobject obj);

@@ -3035,12 +3035,16 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
   cfs->guarantee_more(8, CHECK_(nullHandle));  // magic, major, minor
   // Magic value
+  //获取魔数,如果魔术不正确,
+  //报出Incompatible magic value %u in class file %s 错误
   u4 magic = cfs->get_u4_fast();
   guarantee_property(magic == JAVA_CLASSFILE_MAGIC,
                      "Incompatible magic value %u in class file %s",
                      magic, CHECK_(nullHandle));
-
+   //获取版本信息,
   // Version numbers
+  //读取主次版本号,并进行验证
+  //如果出错,则报出java_lang_UnsupportedClassVersionError
   u2 minor_version = cfs->get_u2_fast();
   u2 major_version = cfs->get_u2_fast();
 
@@ -3073,7 +3077,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   // Check if verification needs to be relaxed for this class file
   // Do not restrict it to jdk1.0 or jdk1.1 to maintain backward compatibility (4982376)
   _relax_verify = Verifier::relax_verify_for(class_loader());
-
+   //读取常量池,返回一个常量池句柄
   // Constant pool
   constantPoolHandle cp = parse_constant_pool(class_loader, CHECK_(nullHandle));
   ConstantPoolCleaner error_handler(cp); // set constant pool to be cleaned up.
@@ -3081,7 +3085,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   int cp_size = cp->length();
 
   cfs->guarantee_more(8, CHECK_(nullHandle));  // flags, this_class, super_class, infs_len
-
+   //读取Access Flag,访问标示
   // Access flags
   AccessFlags access_flags;
   jint flags = cfs->get_u2_fast() & JVM_RECOGNIZED_CLASS_MODIFIERS;
@@ -3092,7 +3096,10 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   }
   verify_legal_class_modifiers(flags, CHECK_(nullHandle));
   access_flags.set_flags(flags);
-
+  /** 常量池中保存类的全限定性名
+   *  通过类的索引可以在常量池中找到类的全限定性类名
+   */
+   //读取当前类索引,并按照类索引,在常量池找到类的全限定性类名
   // This class and superclass
   instanceKlassHandle super_klass;
   u2 this_class_index = cfs->get_u2_fast();
@@ -3147,7 +3154,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       if (cfs->source() != NULL) tty->print(" from %s", cfs->source());
       tty->print_cr("]");
     }
-
+    //读取父类索引,并按照索引在常量池找到父类的全限定性类名和句柄
     u2 super_class_index = cfs->get_u2_fast();
     if (super_class_index == 0) {
       check_property(class_name == vmSymbols::java_lang_Object(),
@@ -3175,7 +3182,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
                           "Bad superclass name in class file %s", CHECK_(nullHandle));
       }
     }
-
+    //解析接口,分为本地接口local_interfaces和父类接口transitive_interfaces
+    //方法 parse_interfaces
     // Interfaces
     u2 itfs_len = cfs->get_u2_fast();
     objArrayHandle local_interfaces;
@@ -3184,7 +3192,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     } else {
       local_interfaces = parse_interfaces(cp, itfs_len, class_loader, protection_domain, _class_name, CHECK_(nullHandle));
     }
-
+    //解析字段信息parse_fields
+    //parse_fields
     u2 java_fields_count = 0;
     // Fields (offsets are filled in later)
     FieldAllocationCount fac;
@@ -3192,6 +3201,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     typeArrayHandle fields = parse_fields(class_name, cp, access_flags.is_interface(), &fac, &fields_annotations,
                                           &java_fields_count,
                                           CHECK_(nullHandle));
+    //解析Methods
+    //parse_methods
     // Methods
     bool has_final_method = false;
     AccessFlags promoted_flags;
@@ -3271,7 +3282,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
 
     // promote flags from parse_methods() to the klass' flags
     access_flags.add_promoted_flags(promoted_flags.as_int());
-
+     //计算Java vtable和Java itable
     // Size of Java vtable (in words)
     int vtable_size = 0;
     int itable_size = 0;
@@ -3627,7 +3638,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     } else {
       rt = super_klass->reference_type();
     }
-
+    //创建当前类的instanceKlass,并且按照上面已经完成的解析赋值
     // We can now create the basic klassOop for this klass
     klassOop ik = oopFactory::new_instanceKlass(name, vtable_size, itable_size,
                                                 static_field_size,
@@ -3745,10 +3756,10 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     if (this_klass->is_interface()) {
       check_illegal_static_method(this_klass, CHECK_(nullHandle));
     }
-
+     //创建镜像类,并初始化静态域
     // Allocate mirror and initialize static fields
     java_lang_Class::create_mirror(this_klass, class_loader, CHECK_(nullHandle));
-
+    //通知类已加载PerfData计数器
     ClassLoadingService::notify_class_loaded(instanceKlass::cast(this_klass()),
                                              false /* not shared class */);
 

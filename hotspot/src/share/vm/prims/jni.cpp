@@ -1316,7 +1316,11 @@ static methodHandle jni_resolve_virtual_call(Handle recv, methodHandle method, T
 }
 
 
-
+/**
+ * 调用JavaCalls模块完成最终Java方法的调用
+   1.根据method_id转换成方法句柄
+   2.通过javacalls完成从JVM对Java方法的调用
+*/
 static void jni_invoke_static(JNIEnv *env, JavaValue* result, jobject receiver, JNICallType call_type, jmethodID method_id, JNI_ArgumentPusher *args, TRAPS) {
   methodHandle method(THREAD, JNIHandles::resolve_jmethod_id(method_id));
 
@@ -5134,7 +5138,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_CreateJavaVM(JavaVM **vm, void **penv, v
    * JNI_CreateJavaVM will immediately fail using the above logic.
    */
   bool can_try_again = true;
-
+  /*调用create_vm()函数完成虚拟机的创建和初始化工作*/
   result = Threads::create_vm((JavaVMInitArgs*) args, &can_try_again);
   if (result == JNI_OK) {
     JavaThread *thread = JavaThread::current();

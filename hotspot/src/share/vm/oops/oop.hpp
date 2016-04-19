@@ -57,11 +57,13 @@ class CMSIsAliveClosure;
 
 class PSPromotionManager;
 class ParCompactionManager;
-
+//OOP层次共同描述对象oopDesc
 class oopDesc {
   friend class VMStructs;
  private:
+  //Mark World 标记信息
   volatile markOop  _mark;
+  //元数据指针
   union _metadata {
     wideKlassOop    _klass;
     narrowOop       _compressed_klass;

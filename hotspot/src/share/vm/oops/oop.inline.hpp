@@ -65,11 +65,11 @@
 inline void oopDesc::release_set_mark(markOop m) {
   OrderAccess::release_store_ptr(&_mark, m);
 }
-
+//原子操作Mark
 inline markOop oopDesc::cas_set_mark(markOop new_mark, markOop old_mark) {
   return (markOop) Atomic::cmpxchg_ptr(new_mark, &_mark, old_mark);
 }
-
+//获取对象对应的类型Klass
 inline klassOop oopDesc::klass() const {
   if (UseCompressedOops) {
     return (klassOop)decode_heap_oop_not_null(_metadata._compressed_klass);
@@ -142,15 +142,16 @@ inline void oopDesc::set_klass_to_list_ptr(oop k) {
     _metadata._klass = (klassOop)k;
   }
 }
-
+//内联  初始化Mark标记 OOPDesc的头
 inline void   oopDesc::init_mark()                 { set_mark(markOopDesc::prototype_for_object(this)); }
 inline Klass* oopDesc::blueprint()           const { return klass()->klass_part(); }
 
 inline bool oopDesc::is_a(klassOop k)        const { return blueprint()->is_subtype_of(k); }
-
+//判断是否是实例
 inline bool oopDesc::is_instance()           const { return blueprint()->oop_is_instance(); }
 inline bool oopDesc::is_instanceMirror()     const { return blueprint()->oop_is_instanceMirror(); }
 inline bool oopDesc::is_instanceRef()        const { return blueprint()->oop_is_instanceRef(); }
+//判断是否是数组
 inline bool oopDesc::is_array()              const { return blueprint()->oop_is_array(); }
 inline bool oopDesc::is_objArray()           const { return blueprint()->oop_is_objArray(); }
 inline bool oopDesc::is_typeArray()          const { return blueprint()->oop_is_typeArray(); }

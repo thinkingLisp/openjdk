@@ -1509,7 +1509,7 @@ struct JNIEnv_ {
                                     jmethodID methodID, const jvalue *args) {
         return functions->CallStaticDoubleMethodA(this,clazz,methodID,args);
     }
-
+    /*JNI函数 调用静态void方法*/
     void CallStaticVoidMethod(jclass cls, jmethodID methodID, ...) {
         va_list args;
         va_start(args,methodID);

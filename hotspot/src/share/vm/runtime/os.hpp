@@ -136,7 +136,9 @@ class os: AllStatic {
 
 
  public:
+ //第一次初始化是在TLS之前,全局参数传入之前
   static void init(void);                      // Called before command line parsing
+  //第二次args解析之后,参数解析之后
   static jint init_2(void);                    // Called after command line parsing
   static void init_globals(void) {             // Called from init_globals() in init.cpp
     init_globals_ext();
@@ -394,15 +396,15 @@ class os: AllStatic {
   static void block_on_serialize_page_trap();
 
   // threads
-
+  //线程类型定义
   enum ThreadType {
-    vm_thread,
-    cgc_thread,        // Concurrent GC thread
-    pgc_thread,        // Parallel GC thread
-    java_thread,
-    compiler_thread,
-    watcher_thread,
-    os_thread
+    vm_thread,         //Vm线程
+    cgc_thread,        // Concurrent GC thread并发GC线程
+    pgc_thread,        // Parallel GC thread并行GC线程
+    java_thread,       //Java线程
+    compiler_thread,   //编译器线程
+    watcher_thread,    //watcher线程
+    os_thread          //os线程
   };
 
   static bool create_thread(Thread* thread,

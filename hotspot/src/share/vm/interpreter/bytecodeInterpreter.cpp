@@ -1970,6 +1970,8 @@ run:
               }
             }
             if (result != NULL) {
+            //初始化对象进行填0操作
+            //这段代码保证对象的实例字段不用初始化即可直接使用,为0
               // Initialize object (if nonzero size and need) and then the header
               if (need_zero ) {
                 HeapWord* to_zero = (HeapWord*) result + sizeof(oopDesc) / oopSize;

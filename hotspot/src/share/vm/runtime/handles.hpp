@@ -157,7 +157,10 @@ class KlassHandle: public Handle {
   Klass*      operator -> () const               { return as_klass(); }
 };
 
-
+/**
+  定义句柄
+ @author 杨
+*/
 //------------------------------------------------------------------------------------------------------------------------
 // Specific Handles for different oop types
 #define DEF_HANDLE(type, is_a)                   \
@@ -169,6 +172,7 @@ class KlassHandle: public Handle {
                                                  \
    public:                                       \
     /* Constructors */                           \
+    /* 构造函数  */
     type##Handle ()                              : Handle()                 {} \
     type##Handle (type##Oop obj) : Handle((oop)obj) {                         \
       assert(SharedSkipVerify || is_null() || ((oop)obj)->is_a(),             \
@@ -180,13 +184,16 @@ class KlassHandle: public Handle {
     \
     /* Special constructor, use sparingly */ \
     type##Handle (type##Oop *handle, bool dummy) : Handle((oop*)handle, dummy) {} \
-                                                 \
+     /* 构造符重载  */                                         \
     /* Operators for ease of use */              \
     type##Oop    operator () () const            { return obj(); } \
     type##Oop    operator -> () const            { return non_null_obj(); } \
   };
 
-
+/**
+ 根据传入的type和is_a的参数不同,构造出不同的handle
+ @author 杨
+*/
 DEF_HANDLE(instance         , is_instance         )
 DEF_HANDLE(method           , is_method           )
 DEF_HANDLE(constMethod      , is_constMethod      )

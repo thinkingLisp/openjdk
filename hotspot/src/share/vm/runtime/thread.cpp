@@ -2785,19 +2785,25 @@ void JavaThread::nmethods_do(CodeBlobClosure* cf) {
     }
   }
 }
-
+//hotspot实现VM的线程状态5种基本状态
+//_thread_*状态*_trans表示类型转换5种基本状态
 // Printing
 const char* _get_thread_state_name(JavaThreadState _thread_state) {
   switch (_thread_state) {
   case _thread_uninitialized:     return "_thread_uninitialized";
+  //表示刚启动,正在初始化状态
   case _thread_new:               return "_thread_new";
   case _thread_new_trans:         return "_thread_new_trans";
+  //表示运行本地代码
   case _thread_in_native:         return "_thread_in_native";
   case _thread_in_native_trans:   return "_thread_in_native_trans";
+  //表示在VM中运行代码
   case _thread_in_vm:             return "_thread_in_vm";
   case _thread_in_vm_trans:       return "_thread_in_vm_trans";
+  //表示运行Java代码
   case _thread_in_Java:           return "_thread_in_Java";
   case _thread_in_Java_trans:     return "_thread_in_Java_trans";
+  //表示阻塞
   case _thread_blocked:           return "_thread_blocked";
   case _thread_blocked_trans:     return "_thread_blocked_trans";
   default:                        return "unknown thread state";
@@ -3260,26 +3266,28 @@ void Threads::threads_do(ThreadClosure* tc) {
 
   // If CompilerThreads ever become non-JavaThreads, add them here
 }
-
+/**/
 jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   extern void JDK_Version_init();
 
   // Check version
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
-
+   //	初始化输出流模块
   // Initialize the output stream module
   ostream_init();
-
+  
+  //	配置Java launcher 属性
   // Process java launcher properties.
   Arguments::process_sun_java_launcher_properties(args);
-
+  
+  //	初始化操作系统模块
   // Initialize the os module before using TLS
   os::init();
-
+   //	配置系统属性
   // Initialize system properties.
   Arguments::init_system_properties();
-
+  // 程序参数和虚拟机参数解析
   // So that JDK version can be used as a discrimintor when parsing arguments
   JDK_Version_init();
 
@@ -3306,11 +3314,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Timing (must come after argument parsing)
   TraceTime timer("Create VM", TraceStartupTime);
-
+   //根据传入的参数继续操作系统的解析
   // Initialize the os module after parsing the args
   jint os_init_2_result = os::init_2();
   if (os_init_2_result != JNI_OK) return os_init_2_result;
-
+  //初始化TLS
   // intialize TLS
   ThreadLocalStorage::init();
 
@@ -3318,7 +3326,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // activities before worker thread is started. This is the first phase
   // of bootstrapping, VM is currently running in single-thread mode.
   MemTracker::bootstrap_single_thread();
-
+  //根据GC日志输出流模块
   // Initialize output stream logging
   ostream_init_log();
 
@@ -3327,33 +3335,38 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (Arguments::init_libraries_at_startup()) {
     convert_vm_init_libraries_to_agents();
   }
-
+  //加载代理agent库
   // Launch -agentlib/-agentpath and converted -Xrun agents
   if (Arguments::init_agents_at_startup()) {
     create_vm_init_agents();
   }
-
+   //初始化线程队列
   // Initialize Threads state
   _thread_list = NULL;
   _number_of_threads = 0;
   _number_of_non_daemon_threads = 0;
-
+   //初始化全局数据结构
   // Initialize global data structures and create system classes in heap
   vm_init_globals();
-
+  //创建主线程并加入线程队列
   // Attach the main thread to this os thread
+  //Java主线程就是main线程,对应OS thread ID为1
+  //创建一个类型为JavaThread的线程,刚创建线程状态为_thread_new
   JavaThread* main_thread = new JavaThread();
+  //将该线程设置状态为_thread_in_vm状态
   main_thread->set_thread_state(_thread_in_vm);
   // must do this before set_active_handles and initialize_thread_local_storage
   // Note: on solaris initialize_thread_local_storage() will (indirectly)
   // change the stack size recorded here to one based on the java thread
   // stacksize. This adjusted size is what is used to figure the placement
   // of the guard pages.
+  //记录线程初始化地址和初始化大小
   main_thread->record_stack_base_and_size();
+  //记录线程的本地存储区
   main_thread->initialize_thread_local_storage();
-
+  //为线程设置JNI句柄
   main_thread->set_active_handles(JNIHandleBlock::allocate_block());
-
+  //为OS模块创建原始线程,并设置为可运行状态
   if (!main_thread->set_as_starting_thread()) {
     vm_shutdown_during_initialization(
       "Failed necessary internal allocation. Out of swap space");
@@ -3395,7 +3408,9 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // Fully start NMT
   MemTracker::start();
-
+   //初始化虚拟机线程
+     //VM线程是在虚拟机内部执行VMOperation操作的线程,
+       //VMOperation实现了虚拟机的内部核心操作,为外部程序提供接口
   // Create the VMThread
   { TraceTime timer("Start VMThread", TraceStartupTime);
     VMThread::create();
@@ -3490,9 +3505,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
         }
       }
     }
-
+    //初始化JDK核心类
     // Initialize java_lang.System (needed before creating the thread)
     if (InitializeJavaLangSystem) {
+    //现在mainThread实际是JVM的内部线程,状态为_thread_in_vm
+    //接下来创建java.lang.thread线程
       initialize_class(vmSymbols::java_lang_System(), CHECK_0);
       initialize_class(vmSymbols::java_lang_ThreadGroup(), CHECK_0);
       Handle thread_group = create_initial_thread_group(CHECK_0);
@@ -3502,6 +3519,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       main_thread->set_threadObj(thread_object);
       // Set thread status to running since main thread has
       // been started and running.
+      //当java main线程创建完成后,就开始运行,设置状态为RUNNABLE
       java_lang_Thread::set_thread_status(thread_object,
                                           java_lang_Thread::RUNNABLE);
 
@@ -3556,13 +3574,15 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Future Fix : the best fix is to grant everyone permissions to read "java.compiler" and
   //              read and write"java.vm.info" in the default policy file. See bugid 4211383
   //              Once that is done, we should remove this hack.
+  //初始化系统类加载器
   initialize_class(vmSymbols::java_lang_Compiler(), CHECK_0);
-
+   
   // More hackery - the static initializer of java.lang.Compiler adds the string "nojit" to
   // the java.vm.info property if no jit gets loaded through java.lang.Compiler (the hotspot
   // compiler does not get loaded through java.lang.Compiler).  "java -version" with the
   // hotspot vm says "nojit" all the time which is confusing.  So, we reset it here.
   // This should also be taken out as soon as 4211383 gets fixed.
+  //初始化系统字典
   reset_vm_info_property(CHECK_0);
 
   quicken_jni_functions();
@@ -3594,7 +3614,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (HAS_PENDING_EXCEPTION) {
     vm_exit_during_initialization(Handle(THREAD, PENDING_EXCEPTION));
   }
-
+//启动SurrogateLockerThread线程
 #ifndef SERIALGC
   // Support for ConcurrentMarkSweep. This should be cleaned up
   // and better encapsulated. The ugly nested if test would go away
@@ -3614,10 +3634,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::enter_live_phase();
-
+  //启动Signal Dispatcher线程
   // Signal Dispatcher needs to be started before VMInit event is posted
   os::signal_init();
-
+   //启动AttachListener线程
   // Start Attach Listener if +StartAttachListener or it can't be started lazily
   if (!DisableAttachMechanism) {
     AttachListener::vm_start();
@@ -3639,14 +3659,14 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (TRACE_START() != JNI_OK) {
     vm_exit_during_initialization("Failed to start tracing backend.");
   }
-
+  //启动Chunk模块
   if (CleanChunkPoolAsync) {
     Chunk::start_chunk_pool_cleaner_task();
   }
-
+   //启动即时编译器
   // initialize compiler(s)
   CompileBroker::compilation_init();
-
+   //初始化Management模块
   Management::initialize(THREAD);
   if (HAS_PENDING_EXCEPTION) {
     // management agent fails to start possibly due to
@@ -3677,6 +3697,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
       // Make sure the watcher thread can be started by WatcherThread::start()
       // or by dynamic enrollment.
       WatcherThread::make_startable();
+      //启动WatcherThread线程
       // Start up the WatcherThread if there are any periodic tasks
       // NOTE:  All PeriodicTasks should be registered by now. If they
       //   aren't, late joiners might appear to start slowly (we might

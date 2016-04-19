@@ -35,7 +35,7 @@
 
 class FieldAllocationCount;
 
-
+//解析   .class文件
 // Parser for for .class files
 //
 // The bytes describing the class file structure is read from a Stream object
@@ -130,7 +130,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
 
   enum { fixed_buffer_size = 128 };
   u_char linenumbertable_buffer[fixed_buffer_size];
-
+  //使用ClassFileStream读取*.class文件作为classFileParse的输入
   ClassFileStream* _stream;              // Actual input stream
 
   enum { LegalClass, LegalField, LegalMethod }; // used to verify unqualified names

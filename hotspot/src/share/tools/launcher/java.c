@@ -209,7 +209,9 @@ static int noExitErrorMessage = 0;
  * create a new thread to invoke JVM. See 6316197 for more information.
  */
 static jlong threadStackSize = 0;  /* stack size of the new thread */
-
+/* 主线程伴随程序执行整个生命周期
+ * JavaMain好像是个外壳,其他程序都是在这个外壳的包裹下执行
+*/
 int JNICALL JavaMain(void * args); /* entry point                  */
 
 struct JavaMainArgs {
@@ -222,6 +224,18 @@ struct JavaMainArgs {
 
 /*
  * Entry point.
+ * 程序入口,在linux和unix系统入口POSIX规范,在window系统不同
+   /openjdk/jdk/src/share/bin/main.c
+   int WINAPI
+    WinMain(HINSTANCE inst, HINSTANCE previnst, LPSTR cmdline, int cmdshow)
+	 ...
+	main函数程序流程:
+	1.获取程序参数
+	2.准备执行环境
+	3.加载libjvm
+	4.解析参数,设置属性和环境变量
+	5.启动一个新线程创建VM,并调用Java方法中的main函数
+	程序创建一个新线程启动,并阻塞自己,新线程即为主线程,程序入口为JavaMain
  */
 int
 main(int argc, char ** argv)
@@ -376,8 +390,9 @@ main(int argc, char ** argv)
          threadStackSize = args1_1.javaStackSize;
       }
     }
-
+ 
     { /* Create a new thread to create JVM and invoke main method */
+      /* 创建一个新的线程去创建虚拟机并调用main方法*/
       struct JavaMainArgs args;
 
       args.argc = argc;
@@ -385,11 +400,30 @@ main(int argc, char ** argv)
       args.jarfile = jarfile;
       args.classname = classname;
       args.ifn = ifn;
-
+      /*JavaMain线程将伴随整个生命周期,调用initializeJVM()函数,初始化JVM*/
       return ContinueInNewThread(JavaMain, threadStackSize, (void*)&args);
     }
 }
-
+/**
+  JavaMain中拥有三哥局部变量,分别是
+   vm  JavaVM
+   env JNIEnv
+   ifn InvocationFunctions
+   1.初始化虚拟机:调用InitializeJVM()
+            将JavaVM,JNIEnv类型成员指向正确的jni函数上
+   2.获取应用程序主类(main class)
+      mainClass = LoadClass(env, classname);
+   3.获取应用程序主方法(main method)
+      mainID = (*env)->GetStaticMethodID(env, mainClass, "main",
+                                       "([Ljava/lang/String;)V");
+   4.传递应用程序参数并执行主方法
+      (*env)->CallStaticVoidMethod(env, mainClass, mainID, mainArgs);                                  
+   5.与主线程断开连接
+       (*vm)->DetachCurrentThread(vm) 
+   6.主方法执行完毕,等待非守护线程结束,创建一个DestroyJavaVM线程销毁JVM
+       (*vm)->DestroyJavaVM(vm);   
+                                        
+*/
 int JNICALL
 JavaMain(void * _args)
 {
@@ -1260,19 +1294,21 @@ ParseArguments(int *pargc, char ***pargv, char **pjarfile,
 /*
  * Initializes the Java Virtual Machine. Also frees options array when
  * finished.
+ * 初始化Java虚拟机
  */
 static jboolean
 InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
 {
     JavaVMInitArgs args;
     jint r;
-
+    /*对args参数进行清零*/
     memset(&args, 0, sizeof(args));
     args.version  = JNI_VERSION_1_2;
     args.nOptions = numOptions;
     args.options  = options;
     args.ignoreUnrecognized = JNI_FALSE;
-
+    
+    /*使用debug模式将会输出大量的信息*/
     if (_launcher_debug) {
         int i = 0;
         printf("JavaVM args:\n    ");
@@ -1284,7 +1320,7 @@ InitializeJVM(JavaVM **pvm, JNIEnv **penv, InvocationFunctions *ifn)
             printf("    option[%2d] = '%s'\n",
                    i, args.options[i].optionString);
     }
-
+    /*CreateJavaVM 得到大量的JNI函数*/
     r = ifn->CreateJavaVM(pvm, (void **)penv, &args);
     JLI_MemFree(options);
     return r == JNI_OK;

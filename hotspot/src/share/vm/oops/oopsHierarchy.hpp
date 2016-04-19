@@ -142,7 +142,13 @@ public:
   // an oop for stuff (like constMethodKlass.cpp, objArrayKlass.cpp)
   operator oop* () const              { return (oop *)obj(); }
 };
-
+/**
+ 在DEF_OOP宏定义中,预处理根据外部传入的参数type,将宏展开为不同的代码块
+ 符号"##"表示实际传入的type值与"##"右边的字符串连接在一起
+ 调用DEF_OOP宏时,如果传递给它不同的type值,那么展开的类型肯定不同
+ 当定义好DEF_OOP后,我们每次调用DEF_OOP,就完成了OOPDesc类型的定义
+ @author 杨
+*/
 #define DEF_OOP(type)                                                      \
    class type##OopDesc;                                                    \
    class type##Oop : public oop {                                          \
@@ -155,7 +161,14 @@ public:
             return (type##OopDesc*)obj();                                  \
        }                                                                   \
    };                                                                      \
-
+/**
+ 定义oopDesc类型,
+ 如instanceOopDesc
+ methodOopDesc
+ methodDataOopDesc
+ ...
+ @author 杨
+*/
 DEF_OOP(instance);
 DEF_OOP(method);
 DEF_OOP(methodData);
